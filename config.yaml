@@ -1,0 +1,5 @@
+options:
+    image:
+        type: string
+        default: nginxdemos/hello
+        description: The docker image to install.
