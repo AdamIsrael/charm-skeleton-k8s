@@ -21,7 +21,6 @@ class SkeletonCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        print("__init__")
         # An example of setting charm state
         # that's persistent across events
         self.state.set_default(is_started=False)
@@ -41,12 +40,10 @@ class SkeletonCharm(CharmBase):
     def _apply_spec(self, spec):
         # Only apply the spec if this unit is a leader.
         if self.framework.model.unit.is_leader():
-            print("_apply_spec")
             self.framework.model.pod.set_spec(spec)
             self.state.spec = spec
 
     def make_pod_spec(self):
-        print("make_pod_spec")
         config = self.framework.model.config
 
         ports = [{"name": "http", "containerPort": 80, "protocol": "TCP"}]
@@ -67,12 +64,17 @@ class SkeletonCharm(CharmBase):
 
         new_spec = self.make_pod_spec()
         if self.state.spec != new_spec:
+            unit.status = MaintenanceStatus("Applying new pod spec")
+
             self._apply_spec(new_spec)
 
+            unit.status = ActiveStatus()
 
     def on_start(self, event):
         """Called when the charm is being installed"""
         unit = self.model.unit
+
+        unit.status = MaintenanceStatus("Applying pod spec")
 
         new_pod_spec = self.make_pod_spec()
         self._apply_spec(new_pod_spec)
@@ -86,7 +88,7 @@ class SkeletonCharm(CharmBase):
         # Mark the unit as under Maintenance.
         unit.status = MaintenanceStatus("Upgrading charm")
 
-        self.on_install(event)
+        self.on_start(event)
 
         # When maintenance is done, return to an Active state
         unit.status = ActiveStatus()
